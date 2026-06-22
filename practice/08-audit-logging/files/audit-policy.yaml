@@ -1,0 +1,11 @@
+# 8강 샘플 — /etc/kubernetes/audit-policy.yaml 로 복사
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  # secrets 는 본문까지 전부 기록
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: ["secrets"]
+  # 그 외는 메타데이터만
+  - level: Metadata

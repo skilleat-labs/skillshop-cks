@@ -1,0 +1,22 @@
+# 문제 3 정답 — 읽기 전용 유지 + emptyDir 볼륨 (ns: sc-ex3)
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: writer, namespace: sc-ex3 }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: writer } }
+  template:
+    metadata: { labels: { app: writer } }
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c", "echo started > /data/app.log && sleep 3600"]
+          securityContext:
+            readOnlyRootFilesystem: true   # 유지
+          volumeMounts:
+            - name: data
+              mountPath: /data             # 여기에만 쓰기 허용
+      volumes:
+        - name: data
+          emptyDir: {}

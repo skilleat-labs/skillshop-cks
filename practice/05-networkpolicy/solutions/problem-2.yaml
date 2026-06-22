@@ -1,0 +1,18 @@
+# 문제 2 정답 — deny-all + DNS egress 허용
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: default-deny, namespace: netpol-ex2 }
+spec:
+  podSelector: {}                 # 모든 파드
+  policyTypes: ["Ingress", "Egress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: allow-dns, namespace: netpol-ex2 }
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }

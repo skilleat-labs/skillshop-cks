@@ -1,0 +1,8 @@
+# 문제 1 정답 — 최소 권한 Role (app-role 교체)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: { name: app-role, namespace: rbac-ex1 }
+rules:
+  - apiGroups: [""]           # 코어 API 그룹
+    resources: ["pods"]
+    verbs: ["get", "list"]

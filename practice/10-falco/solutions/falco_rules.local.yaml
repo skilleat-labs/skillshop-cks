@@ -1,0 +1,6 @@
+# 문제 1 정답 — /etc/falco/falco_rules.local.yaml
+- rule: Shell in container
+  desc: 컨테이너 내부에서 셸 실행 탐지
+  condition: spawned_process and container and proc.name in (sh, bash)
+  output: "Shell in container (user=%user.name container=%container.id proc=%proc.cmdline)"
+  priority: WARNING
