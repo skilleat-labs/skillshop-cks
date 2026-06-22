@@ -1,11 +1,4 @@
-# 문제 2 정답 — reader 최소 권한 + 토큰 자동마운트 off
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: reader
-  namespace: rbac-ex2
-automountServiceAccountToken: false
----
+# 문제 2 정답 — reader 에게 pods get/list/watch 만 (Role + RoleBinding)
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:

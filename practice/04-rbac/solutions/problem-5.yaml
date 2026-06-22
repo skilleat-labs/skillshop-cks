@@ -1,0 +1,26 @@
+# 문제 5 정답 — 노드는 클러스터 범위 → ClusterRole + ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-reader
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: inspector-nodes
+subjects:
+  - kind: ServiceAccount
+    name: inspector
+    namespace: rbac-ex5
+roleRef:
+  kind: ClusterRole
+  name: node-reader
+  apiGroup: rbac.authorization.k8s.io
