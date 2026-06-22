@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-db
+  namespace: skillshop
+  labels: { app: user-db }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: user-db }
+  template:
+    metadata:
+      labels: { app: user-db }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef: { name: skillshop-db }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "skillshop", "-d", "skillshop"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-db
+  namespace: skillshop
+spec:
+  selector: { app: user-db }
+  ports:
+    - port: 5432
+      targetPort: 5432

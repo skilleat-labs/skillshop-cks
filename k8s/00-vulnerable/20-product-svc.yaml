@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-svc
+  namespace: skillshop
+  labels: { app: product-svc }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: product-svc }
+  template:
+    metadata:
+      labels: { app: product-svc }
+    spec:
+      containers:
+        - name: product-svc
+          image: skilleat/skillshop-product-svc:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-svc
+  namespace: skillshop
+spec:
+  selector: { app: product-svc }
+  ports:
+    - port: 8080
+      targetPort: 8080

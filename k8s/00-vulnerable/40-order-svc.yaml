@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-svc
+  namespace: skillshop
+  labels: { app: order-svc }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: order-svc }
+  template:
+    metadata:
+      labels: { app: order-svc }
+    spec:
+      containers:
+        - name: order-svc
+          image: skilleat/skillshop-order-svc:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: skillshop-db, key: DATABASE_URL } }
+            - name: PRODUCT_SVC_URL
+              value: http://product-svc:8080
+            - name: PAYMENT_SVC_URL
+              value: http://payment-svc:8080
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-svc
+  namespace: skillshop
+spec:
+  selector: { app: order-svc }
+  ports:
+    - port: 8080
+      targetPort: 8080
