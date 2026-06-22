@@ -1,4 +1,10 @@
-# 문제 1 정답 — restricted 통과 Deployment
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pss-ex1
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,11 +20,6 @@ spec:
       labels:
         app: web
     spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 10001
-        seccompProfile:
-          type: RuntimeDefault
       containers:
         - name: app
           image: busybox:1.36
@@ -26,8 +27,3 @@ spec:
             - sh
             - -c
             - sleep 3600
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL

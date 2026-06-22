@@ -1,4 +1,8 @@
-# 문제 3 정답 — 읽기 전용 유지 + emptyDir 볼륨
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sc-ex3
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,15 +21,10 @@ spec:
       containers:
         - name: app
           image: busybox:1.36
+          # /data 에 로그를 쓴 뒤 대기. 루트FS 읽기전용이라 지금은 크래시한다.
           command:
             - sh
             - -c
             - echo started > /data/app.log && sleep 3600
           securityContext:
             readOnlyRootFilesystem: true
-          volumeMounts:
-            - name: data
-              mountPath: /data
-      volumes:
-        - name: data
-          emptyDir: {}

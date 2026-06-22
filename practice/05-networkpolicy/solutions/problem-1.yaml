@@ -1,10 +1,17 @@
 # 문제 1 정답 — db 는 web 에서만 허용
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: { name: db-allow-web, namespace: netpol-ex1 }
+metadata:
+  name: db-allow-web
+  namespace: netpol-ex1
 spec:
-  podSelector: { matchLabels: { app: db } }
-  policyTypes: ["Ingress"]
+  podSelector:
+    matchLabels:
+      app: db
+  policyTypes:
+    - Ingress
   ingress:
     - from:
-        - podSelector: { matchLabels: { app: web } }
+        - podSelector:
+            matchLabels:
+              app: web

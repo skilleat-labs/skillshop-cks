@@ -4,3 +4,7 @@ __pycache__/
 .env
 *.db
 .DS_Store
+
+# 강의 PPT는 git에 올리지 않음
+*.pptx
+labs/

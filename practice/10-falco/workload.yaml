@@ -1,0 +1,28 @@
+# 10강 탐지 대상 워크로드. 적용: kubectl apply -f workload.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: falco-ex
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: suspicious
+  namespace: falco-ex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: suspicious
+  template:
+    metadata:
+      labels:
+        app: suspicious
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - while true; do sh -c 'id'; sleep 20; done

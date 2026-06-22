@@ -9,7 +9,8 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-    - hosts: ["shop.example.com"]
+    - hosts:
+        - shop.example.com
       secretName: shop-tls
   rules:
     - host: shop.example.com
@@ -17,4 +18,8 @@ spec:
         paths:
           - path: /
             pathType: Prefix
-            backend: { service: { name: shop, port: { number: 80 } } }
+            backend:
+              service:
+                name: shop
+                port:
+                  number: 80

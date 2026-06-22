@@ -1,18 +1,22 @@
-# 문제 1 정답 — restricted 통과 Deployment
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pss-ex2
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web
-  namespace: pss-ex1
+  name: app
+  namespace: pss-ex2
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: web
+      app: app
   template:
     metadata:
       labels:
-        app: web
+        app: app
     spec:
       securityContext:
         runAsNonRoot: true

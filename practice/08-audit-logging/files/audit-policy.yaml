@@ -6,6 +6,7 @@ rules:
   - level: RequestResponse
     resources:
       - group: ""
-        resources: ["secrets"]
+        resources:
+          - secrets
   # 그 외는 메타데이터만
   - level: Metadata
