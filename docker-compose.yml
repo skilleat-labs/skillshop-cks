@@ -1,0 +1,60 @@
+# SkillShop 로컬 실행 (Rancher Desktop / Docker)
+#   docker compose up --build
+#   브라우저: http://localhost:8080
+#
+# 기본은 "취약" 버전(각 서비스의 Dockerfile)으로 빌드된다.
+# 하드닝 이미지를 보려면 각 서비스 build.dockerfile 를 Dockerfile.hardened 로 바꾼다.
+services:
+  user-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: skillshop
+      POSTGRES_USER: skillshop
+      POSTGRES_PASSWORD: skillshop123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillshop -d skillshop"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  product-svc:
+    build: ./services/product-svc
+    restart: on-failure
+
+  payment-svc:
+    build: ./services/payment-svc
+    environment:
+      DATABASE_URL: postgresql+psycopg2://skillshop:skillshop123@user-db:5432/skillshop
+    depends_on:
+      user-db:
+        condition: service_healthy
+    restart: on-failure
+
+  order-svc:
+    build: ./services/order-svc
+    environment:
+      DATABASE_URL: postgresql+psycopg2://skillshop:skillshop123@user-db:5432/skillshop
+      PRODUCT_SVC_URL: http://product-svc:8080
+      PAYMENT_SVC_URL: http://payment-svc:8080
+    depends_on:
+      user-db:
+        condition: service_healthy
+      product-svc:
+        condition: service_started
+      payment-svc:
+        condition: service_started
+    restart: on-failure
+
+  frontend:
+    build: ./services/frontend
+    environment:
+      PRODUCT_SVC_URL: http://product-svc:8080
+      ORDER_SVC_URL: http://order-svc:8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      product-svc:
+        condition: service_started
+      order-svc:
+        condition: service_started
+    restart: on-failure

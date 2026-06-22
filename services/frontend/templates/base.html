@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SkillShop{% endblock %}</title>
+  <style>
+    :root{
+      --blue:#1D6FE0; --blue-dark:#1556B0; --blue-50:#EFF5FE; --blue-100:#DCE9FC;
+      --ink:#15233B; --muted:#62718A; --line:#E7ECF3; --bg:#F6F8FC; --card:#FFFFFF;
+      --ok:#15924B; --ok-50:#E9F7EF; --warn:#C0392B; --warn-50:#FBECEC;
+      --radius:16px; --shadow:0 1px 2px rgba(21,35,59,.06),0 8px 24px rgba(21,35,59,.06);
+      --shadow-hover:0 4px 10px rgba(21,35,59,.08),0 18px 40px rgba(29,111,224,.14);
+    }
+    *{box-sizing:border-box;}
+    html,body{margin:0;}
+    body{
+      background:var(--bg); color:var(--ink); line-height:1.55;
+      font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",
+                  "Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+      -webkit-font-smoothing:antialiased;
+    }
+    a{color:inherit;text-decoration:none;}
+    .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
+
+    /* header */
+    header.nav{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.85);
+      backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid var(--line);}
+    .nav .row{display:flex;align-items:center;justify-content:space-between;height:64px;}
+    .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.02em;}
+    .logo .mark{width:30px;height:30px;border-radius:9px;background:var(--blue);
+      display:grid;place-items:center;color:#fff;font-weight:900;font-size:16px;
+      box-shadow:0 4px 10px rgba(29,111,224,.35);}
+    .logo .dot{color:var(--blue);}
+    .nav .links{display:flex;align-items:center;gap:22px;color:var(--muted);font-size:14px;font-weight:600;}
+    .nav .links a:hover{color:var(--ink);}
+    .nav .cta{background:var(--blue-50);color:var(--blue);padding:8px 14px;border-radius:10px;font-weight:700;}
+
+    /* hero */
+    .hero{padding:46px 0 14px;}
+    .hero .eyebrow{display:inline-flex;align-items:center;gap:7px;background:var(--blue-50);
+      color:var(--blue);font-weight:700;font-size:13px;padding:6px 12px;border-radius:999px;}
+    .hero h1{font-size:34px;line-height:1.25;letter-spacing:-.03em;margin:16px 0 8px;font-weight:800;}
+    .hero p{color:var(--muted);font-size:16px;margin:0;}
+    .searchbar{display:flex;gap:8px;margin-top:22px;max-width:520px;}
+    .searchbar input{flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;
+      padding:13px 16px;font-size:15px;outline:none;}
+    .searchbar input:focus{border-color:var(--blue);box-shadow:0 0 0 4px var(--blue-50);}
+
+    /* section head */
+    .sec-head{display:flex;align-items:baseline;justify-content:space-between;margin:34px 0 16px;}
+    .sec-head h2{font-size:20px;font-weight:800;letter-spacing:-.02em;margin:0;}
+    .sec-head .count{color:var(--muted);font-size:14px;}
+
+    /* course grid */
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:20px;padding-bottom:10px;}
+    .course{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+      overflow:hidden;box-shadow:var(--shadow);transition:transform .16s ease,box-shadow .16s ease;
+      display:flex;flex-direction:column;}
+    .course:hover{transform:translateY(-4px);box-shadow:var(--shadow-hover);}
+    .thumb{height:104px;display:flex;align-items:center;justify-content:center;position:relative;}
+    .thumb .ico{width:46px;height:46px;color:#fff;opacity:.95;}
+    .thumb .badge{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.92);
+      color:var(--ink);font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;}
+    .t0{background:linear-gradient(135deg,#2D7BF0,#1556B0);}
+    .t1{background:linear-gradient(135deg,#21B0A8,#0E7C76);}
+    .t2{background:linear-gradient(135deg,#7A5BF0,#4B33B0);}
+    .t3{background:linear-gradient(135deg,#F0883B,#C25E16);}
+    .course .body{padding:16px 16px 18px;display:flex;flex-direction:column;gap:10px;flex:1;}
+    .course h3{font-size:16px;font-weight:800;letter-spacing:-.01em;margin:0;}
+    .inst{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;}
+    .ava{width:24px;height:24px;border-radius:50%;background:var(--blue-100);color:var(--blue-dark);
+      font-size:11px;font-weight:800;display:grid;place-items:center;}
+    .course .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+    .price{font-weight:800;font-size:18px;letter-spacing:-.02em;}
+    .price small{display:block;font-weight:600;font-size:11px;color:var(--muted);}
+
+    /* buttons */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;
+      background:var(--blue);color:#fff;font-weight:700;font-size:14px;padding:11px 16px;border-radius:11px;
+      transition:background .15s ease,transform .05s ease;white-space:nowrap;}
+    .btn:hover{background:var(--blue-dark);}
+    .btn:active{transform:translateY(1px);}
+    .btn.sm{padding:9px 13px;font-size:13px;border-radius:10px;}
+    .btn.block{width:100%;padding:14px;font-size:15px;}
+    .btn.ghost{background:#fff;color:var(--blue);border:1px solid var(--line);}
+    .btn.ghost:hover{background:var(--blue-50);border-color:var(--blue-100);}
+
+    /* generic layout pieces */
+    .page-title{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:34px 0 4px;}
+    .page-sub{color:var(--muted);margin:0 0 24px;}
+    .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);}
+    .cols{display:grid;grid-template-columns:1.3fr .9fr;gap:22px;align-items:start;}
+    @media(max-width:760px){.cols{grid-template-columns:1fr;}}
+
+    /* form */
+    .form{padding:26px;}
+    .field{margin-bottom:16px;}
+    .field label{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:7px;}
+    .field .hint{color:var(--muted);font-weight:500;}
+    .control{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;
+      padding:0 14px;background:#fff;transition:border .15s,box-shadow .15s;}
+    .control:focus-within{border-color:var(--blue);box-shadow:0 0 0 4px var(--blue-50);}
+    .control svg{width:18px;height:18px;color:var(--muted);flex:none;}
+    .control input{border:none;outline:none;width:100%;padding:13px 0;font-size:15px;background:transparent;color:var(--ink);}
+
+    /* summary card */
+    .summary{padding:22px;position:sticky;top:84px;}
+    .summary .lab{color:var(--muted);font-size:13px;font-weight:700;}
+    .summary .name{font-size:18px;font-weight:800;margin:6px 0 16px;letter-spacing:-.01em;}
+    .sumrow{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);padding:7px 0;}
+    .sumrow.total{border-top:1px dashed var(--line);margin-top:10px;padding-top:14px;color:var(--ink);font-weight:800;font-size:17px;}
+    .secure{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;margin-top:16px;}
+    .secure svg{width:15px;height:15px;color:var(--ok);}
+
+    /* result */
+    .result{max-width:520px;margin:46px auto;padding:34px;text-align:center;}
+    .result .circle{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;margin:0 auto 18px;}
+    .result .circle svg{width:38px;height:38px;}
+    .circle.ok{background:var(--ok-50);color:var(--ok);}
+    .circle.bad{background:var(--warn-50);color:var(--warn);}
+    .result h1{font-size:23px;font-weight:800;margin:0 0 6px;}
+    .result p.msg{color:var(--muted);margin:0 0 22px;}
+    .receipt{text-align:left;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:22px;background:var(--blue-50);}
+    .receipt .r{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;}
+    .receipt .r b{font-weight:800;}
+    .txn{color:var(--muted);font-size:12px;}
+
+    .alert{background:var(--warn-50);color:var(--warn);border:1px solid #f3c9c5;border-radius:12px;
+      padding:14px 16px;font-size:14px;font-weight:600;}
+
+    footer.ft{color:var(--muted);font-size:13px;padding:48px 0 30px;margin-top:30px;border-top:1px solid var(--line);}
+    footer.ft .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  </style>
+</head>
+<body>
+  <header class="nav"><div class="wrap row">
+    <a class="logo" href="{{ url_for('index') }}">
+      <span class="mark">S</span><span>Skill<span class="dot">Shop</span></span>
+    </a>
+    <nav class="links">
+      <a href="{{ url_for('index') }}">전체 강의</a>
+      <a href="{{ url_for('index') }}">로드맵</a>
+      <a class="cta" href="{{ url_for('index') }}">로그인</a>
+    </nav>
+  </div></header>
+
+  <main>{% block body %}{% endblock %}</main>
+
+  <footer class="ft"><div class="wrap">
+    <span>© SkillShop — 성장하는 개발자를 위한 강의 플랫폼</span>
+    <span>CKS 실습용 데모 애플리케이션</span>
+  </div></footer>
+</body>
+</html>
