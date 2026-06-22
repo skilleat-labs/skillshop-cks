@@ -70,3 +70,7 @@ DOCKERHUB_NS=skilleat TAG=2.0 DOCKERFILE=Dockerfile.hardened ./scripts/build-and
 - 자동 배포 설정 파일: `.github/workflows/docker-publish.yml`
 - 비공개로 두고 싶으면 GitHub 저장소를 private으로, Docker Hub repo도 private으로 만들면 됩니다.
 - 이미지를 K8s에서 당길 때는 `skilleat/skillshop-frontend:1.0` 처럼 참조합니다.
+
+## 멀티 아키텍처
+
+이미지는 `linux/amd64` + `linux/arm64` 둘 다로 빌드됩니다(Intel·Apple Silicon 공용). 워크플로의 `PLATFORMS` 값으로 조정하고, QEMU 에뮬레이션으로 arm64를 굽기 때문에 빌드는 단일 아키보다 조금 느립니다.

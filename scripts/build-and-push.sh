@@ -1,26 +1,30 @@
 #!/usr/bin/env bash
-# SkillShop 이미지 4개를 빌드해서 Docker Hub에 푸시한다. (로컬에 Docker 필요)
+# SkillShop 이미지 4개를 멀티 아키텍처(amd64+arm64)로 빌드해 Docker Hub에 푸시.
+# 로컬에 Docker(Rancher Desktop) + buildx 필요. 멀티아키 이미지는 빌드와 동시에 push됨.
 #
 # 사용법:
 #   docker login
-#   # 취약 버전 (태그 1.0)
-#   ./scripts/build-and-push.sh
-#   # 하드닝 버전 (태그 2.0)
-#   TAG=2.0 DOCKERFILE=Dockerfile.hardened ./scripts/build-and-push.sh
+#   ./scripts/build-and-push.sh                                      # 취약 1.0
+#   TAG=2.0 DOCKERFILE=Dockerfile.hardened ./scripts/build-and-push.sh   # 하드닝 2.0
 set -euo pipefail
 
-NS="${DOCKERHUB_NS:-skilleat}"         # Docker Hub 네임스페이스
+NS="${DOCKERHUB_NS:-skilleat}"
 TAG="${TAG:-1.0}"
-DOCKERFILE="${DOCKERFILE:-Dockerfile}" # Dockerfile 또는 Dockerfile.hardened
+DOCKERFILE="${DOCKERFILE:-Dockerfile}"
+PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
 SERVICES="frontend product-svc order-svc payment-svc"
 
 cd "$(dirname "$0")/.."
+docker buildx create --use --name skillshop-builder 2>/dev/null || docker buildx use skillshop-builder
 
 for s in $SERVICES; do
   img="${NS}/skillshop-${s}:${TAG}"
-  echo "==> building ${img}  (${DOCKERFILE})"
-  docker build -f "services/${s}/${DOCKERFILE}" -t "${img}" "services/${s}"
-  echo "==> pushing ${img}"
-  docker push "${img}"
+  echo "==> buildx (${PLATFORMS}) ${img}  (${DOCKERFILE})"
+  docker buildx build \
+    --platform "${PLATFORMS}" \
+    -f "services/${s}/${DOCKERFILE}" \
+    -t "${img}" \
+    --push \
+    "services/${s}"
 done
-echo "완료: ${NS}/skillshop-* :${TAG}"
+echo "완료: ${NS}/skillshop-* :${TAG}  (${PLATFORMS})"
