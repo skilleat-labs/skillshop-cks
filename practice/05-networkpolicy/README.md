@@ -38,6 +38,12 @@ kubectl get ciliumnetworkpolicies -n cnp-ex
 # cnp-client → target 접근(인증됨) 동작, 그 외 네임스페이스는 차단
 kubectl exec -n cnp-client deploy/client -- wget -qO- --timeout=3 http://target.cnp-ex | head -c 30
 ```
+> **전제조건(클러스터당 1회):** mutual auth 는 Cilium SPIRE 기능이 켜져 있어야 동작합니다. 안 켜져 있으면 정책이 `VALID: False`(mutual auth feature is disabled)로 뜨고 트래픽이 막혀요. 아래 스크립트를 **문제 3 실습 전에 한 번** 실행하세요.
+> ```bash
+> ./setup-mutual-auth.sh   # cilium/helm 으로 SPIRE+mutual auth 활성화 (1회)
+> ```
+> 확인: `kubectl get ciliumnetworkpolicy -n cnp-ex` 의 VALID 가 True 여야 함.
+
 > 라벨 매칭은 `io.kubernetes.pod.namespace: <네임스페이스명>` (Cilium 예약 라벨, 자동 부여). mutual auth 실제 동작 확인은 클러스터에 Cilium authentication(SPIRE)이 활성화돼 있어야 함.
 
 ## 정리
