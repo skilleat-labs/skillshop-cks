@@ -1,0 +1,20 @@
+# 문제 3 정답 — CiliumNetworkPolicy (mutual auth + host 예외)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: target-mutual-auth
+  namespace: cnp-ex
+spec:
+  endpointSelector:
+    matchLabels:
+      app: target
+  ingress:
+    # 1) cnp-client 네임스페이스의 Pod → 상호 인증 필수
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: cnp-client
+      authentication:
+        mode: required
+    # 2) 호스트 접근 → 상호 인증 없이 허용 (authentication 블록 없음)
+    - fromEntities:
+        - host
