@@ -1,24 +1,41 @@
 # 9강 실습 — Supply Chain Security
 
-> Docker(또는 Rancher Desktop) + trivy 가 로컬에 있어야 합니다. 일부는 컨트롤플레인 노드 작업.
+> 로컬에 **trivy** 와 **bom** 이 있어야 합니다(시험장엔 설치돼 있음). 문제 5는 컨트롤플레인 노드 작업.
+> 시험 중 허용 문서: trivy(aquasecurity.github.io/trivy), bom(kubernetes-sigs/bom), kubernetes.io
+> 설치(없을 때): trivy 는 배포본/`apt`, bom 은 `go install sigs.k8s.io/bom/cmd/bom@latest` 또는 릴리스 바이너리.
 
-## 문제 1 — 이미지 취약점 스캔
-아무 이미지나 골라 HIGH/CRITICAL 취약점을 스캔하라.
+## 문제 1 — trivy 로 취약점 스캔 + 결과 저장
+이미지의 HIGH·CRITICAL 취약점을 스캔하고, 결과를 파일로 저장하라.
 ```bash
 trivy image --severity HIGH,CRITICAL nginx:1.18
+# 결과를 파일로 (json)
+trivy image --severity HIGH,CRITICAL --format json --output /tmp/scan.json nginx:1.18
+# CRITICAL 개수만 빠르게
+trivy image --severity CRITICAL --quiet nginx:1.18 | grep -c CVE- || true
 ```
-(개수가 많이 나오는 걸 확인 → 왜 최신·슬림 이미지를 써야 하는지 체감)
+정답/요령: `solutions/trivy.md`
 
-## 문제 2 — 안전한 Dockerfile 로 고치기
-`files/Dockerfile` 은 full 베이스 + root 실행이다. 다음을 만족하게 다시 작성하라.
-- slim(또는 distroless) 베이스 + 멀티스테이지
-- 비-root 실행 (`USER`)
-- `USER` 는 모든 `RUN` 이 끝난 **맨 마지막**에
+## 문제 2 — bom 으로 SBOM(SPDX) 생성
+`bom` 으로 이미지의 **SPDX 명세서(SBOM)** 를 만들어 파일로 저장하라.
+```bash
+bom generate --image nginx:1.18 --output /tmp/sbom.spdx
+head -n 15 /tmp/sbom.spdx        # SPDXVersion: SPDX-2.x ... 이면 성공
+```
+> 디렉터리 대상이면 `bom generate -d . --output /tmp/sbom.spdx`. 정답: `solutions/bom.md`
 
-정답: `solutions/Dockerfile`
+## 문제 3 — SBOM 에서 컴포넌트 찾기
+문제 2에서 만든 SBOM(`/tmp/sbom.spdx`)에서 특정 패키지(예: `openssl`)가 들어있는지와 **버전**을 찾아라. 전체 패키지 수도 세어보라.
+```bash
+grep -i -A2 "PackageName: .*openssl" /tmp/sbom.spdx     # 패키지명 + 버전
+grep -c "PackageName:" /tmp/sbom.spdx                   # 총 패키지 수
+```
+정답/요령: `solutions/sbom-find.md`
 
-## 문제 3 — ImagePolicyWebhook (컨트롤플레인, 노드 작업)
-`/etc/kubernetes/admission/config.yaml` 에서 `defaultAllow: false` 로 두어, 웹훅 장애 시 이미지를 **거부**하도록 한다. (apiserver 에 `--admission-control-config-file` 연결 + 디렉토리 volume 마운트)
-정답 스니펫: `solutions/admission.md`
+## 문제 4 — 안전한 Dockerfile 로 고치기
+`files/Dockerfile` 은 full 베이스 + root 실행이다. slim/distroless + 멀티스테이지 + 비-root `USER`(모든 `RUN` 뒤 맨 마지막)로 다시 작성하라. 정답: `solutions/Dockerfile`
 
-> 구분: `trivy` = CVE 스캔, `bom` = SPDX 명세(SBOM) 생성. 시험에서 자주 헷갈림.
+## 문제 5 — ImagePolicyWebhook (노드)
+`/etc/kubernetes/admission/config.yaml` 에서 `defaultAllow: false`(웹훅 장애 시 거부) + apiserver 에 `--admission-control-config-file` 연결 + 디렉터리 volume 마운트. 정답: `solutions/admission.md`
+
+---
+> 도구 구분(시험 단골): **trivy = CVE 스캔**, **bom = SPDX SBOM 생성**. trivy 도 SBOM 을 만들거나(`--format spdx-json`) SBOM 을 스캔(`trivy sbom <file>`)할 수 있지만, "명세서 생성"의 표준 도구로는 bom 을 묻는다.
