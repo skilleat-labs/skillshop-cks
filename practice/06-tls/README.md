@@ -53,3 +53,5 @@ curl -vk https://api.example.com:$HTTPS_PORT --resolve api.example.com:$HTTPS_PO
 kubectl delete -f setup.yaml -f problem-3.yaml
 kubectl delete secret shop-tls -n tls-ex 2>/dev/null
 ```
+> ingress-nginx 컨트롤러는 **안 지웁니다**(다른 실습에서도 쓸 수 있게 남겨둠).
+> 완전히 제거하려면: `kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/baremetal/deploy.yaml`

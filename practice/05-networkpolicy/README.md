@@ -1,6 +1,8 @@
 # 5강 실습 — NetworkPolicy (+ Cilium)
 
 > 표준 NetworkPolicy(문제 1·2)는 정책 강제 CNI(Calico/Cilium) 필요.
+> ✅ **이 실습 환경은 Cilium** 이라 표준 NetworkPolicy 를 강제합니다 → 문제 1·2 는 추가 설정 없이 그대로 진행하면 됩니다.
+> (확인: `kubectl get pods -n kube-system | grep cilium` 이 Running)
 > 문제 3은 **Cilium CNI + mutual authentication 기능(SPIRE)** 이 켜져 있어야 동작.
 
 ```bash

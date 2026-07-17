@@ -1,6 +1,9 @@
 # 8강 실습 — Audit Logging (컨트롤플레인 노드)
 
 > 노드의 kube-apiserver static pod 에 audit 를 켭니다. 네임스페이스 YAML 아님.
+> ⚠️ **수정 전 백업 필수:** `sudo cp /etc/kubernetes/manifests/kube-apiserver.yaml ~/kube-apiserver.yaml.bak`
+> 매니페스트를 잘못 고치면 apiserver 가 죽고 `kubectl` 자체가 먹통이 됩니다. 그때는 백업으로 되돌리세요.
+> (apiserver 안 뜰 때 로그: `sudo crictl logs $(sudo crictl ps -a --name kube-apiserver -q | head -1)`)
 
 ## 과제
 1. `files/audit-policy.yaml` 를 노드의 `/etc/kubernetes/audit-policy.yaml` 로 복사

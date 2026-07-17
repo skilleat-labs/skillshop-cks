@@ -14,6 +14,8 @@ kubectl get deploy app -n sys-ex -o jsonpath='{.spec.template.spec.securityConte
 
 ## 문제 2 — AppArmor (노드)
 노드 `/etc/apparmor.d/` 에 프로파일 로드(`apparmor_parser`) 후 Pod 에 지정. 프로파일은 해당 노드에 먼저 로드돼야 스케줄됨.
+> Pod 지정 방식: 이 환경은 **k8s 1.32** 라 `securityContext.appArmorProfile`(type: `Localhost`, localhostProfile: `<프로파일명>`) **필드**를 씁니다.
+> (구버전 `container.apparmor.security.beta.kubernetes.io/<컨테이너>` **annotation** 방식은 1.30 에서 deprecated → 1.32 에선 필드 방식 권장)
 
 ## 문제 3 — Docker 데몬 (노드)
 ```bash
