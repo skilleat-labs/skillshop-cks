@@ -1,0 +1,26 @@
+# q1 정답 — CiliumNetworkPolicy: client ns 는 mutual auth 필수, host 는 auth 없이 허용
+# 적용: kubectl apply -f solutions/q1-cilium-mutualauth.yaml
+# 전제: mutual auth enforcement 는 Cilium SPIRE 활성 필요(../../practice/05-networkpolicy/setup-mutual-auth.sh)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: target-mutual-auth
+  namespace: m2-cnp
+spec:
+  endpointSelector:
+    matchLabels:
+      app: target
+  ingress:
+    # ① m2-cnp-client 네임스페이스의 Pod → mutual authentication 필수
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: m2-cnp-client
+      authentication:
+        mode: "required"
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+    # ② host 접근은 mutual auth 없이 허용 (auth 블록 없음)
+    - fromEntities:
+        - host

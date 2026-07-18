@@ -1,0 +1,28 @@
+# q1 정답 — Restricted PSS 4대 필드 적용한 web Deployment
+# 적용: kubectl apply -f solutions/q1-pss.yaml   (또는 kubectl edit deploy/web -n m1-pss)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: m1-pss
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: web }
+  template:
+    metadata:
+      labels: { app: web }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault           # restricted 필수
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+          securityContext:
+            allowPrivilegeEscalation: false   # restricted 필수
+            capabilities:
+              drop: ["ALL"]                   # restricted 필수

@@ -1,0 +1,41 @@
+# q3 정답 — SA/Pod automount off + projected volume 로 토큰 read-only 수동 마운트
+# 적용: kubectl apply -f solutions/q3-sa-token.yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: robot
+  namespace: m2-sa
+automountServiceAccountToken: false        # SA 레벨 off
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: m2-sa
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: app }
+  template:
+    metadata:
+      labels: { app: app }
+    spec:
+      serviceAccountName: robot
+      automountServiceAccountToken: false    # Pod 레벨 off (우선)
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+          volumeMounts:
+            - name: sa-token
+              mountPath: /var/run/secrets/tokens
+              readOnly: true                 # read-only 수동 마운트
+      volumes:
+        - name: sa-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  expirationSeconds: 3600
+                  audience: api

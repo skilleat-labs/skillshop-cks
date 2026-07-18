@@ -1,0 +1,119 @@
+# ============================================================
+# CKS 모의고사 2회차 — 클러스터 리소스 문제 환경 (q1~q3)
+# 적용:  kubectl apply -f setup.yaml
+# q4(Audit)·q5(bom)·q6(노드업그레이드)·q7(ImagePolicyWebhook) 는 노드/로컬 작업.
+# ============================================================
+
+# ---------- q1. Cilium NetworkPolicy (mutual auth) · ns m2-cnp ----------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: m2-cnp
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: m2-cnp-client
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: target
+  namespace: m2-cnp
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: target }
+  template:
+    metadata:
+      labels: { app: target }
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports: [{ containerPort: 80 }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: target
+  namespace: m2-cnp
+spec:
+  selector: { app: target }
+  ports: [{ port: 80, targetPort: 80 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: m2-cnp-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: client }
+  template:
+    metadata:
+      labels: { app: client }
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+---
+# ---------- q2. SecurityContext (immutable) · ns m2-sc ----------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: m2-sc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: m2-sc
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: worker }
+  template:
+    metadata:
+      labels: { app: worker }
+    spec:
+      # 현재: root 실행 + 쓰기가능 루트FS + 권한상승 허용 + capability 그대로 (비-immutable)
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+---
+# ---------- q3. SA 토큰 automount 비활성화 + projected volume · ns m2-sa ----------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: m2-sa
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: robot
+  namespace: m2-sa
+  # 현재: automountServiceAccountToken 미설정(기본 true) — false 로 바꿔야 함
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: m2-sa
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: app }
+  template:
+    metadata:
+      labels: { app: app }
+    spec:
+      serviceAccountName: robot
+      # 현재: 기본 SA 토큰이 자동 마운트됨 — 끄고 projected volume 으로 수동(read-only) 마운트해야 함
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]

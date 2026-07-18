@@ -1,0 +1,191 @@
+# ============================================================
+# CKS 모의고사 1회차 — 클러스터 리소스 문제 환경 (q1~q4)
+# 적용:  kubectl apply -f setup.yaml
+# 정리:  ../reset.sh   (또는 kubectl delete -f setup.yaml + CRB 삭제)
+# 노드 문제(q5 Falco, q6 apiserver)와 로컬 문제(q7 trivy)는 이 파일로 만들지 않는다.
+# ============================================================
+
+# ---------- q1. Restricted PSS (deploy 수정) · ns m1-pss ----------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: m1-pss
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: m1-pss
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: web }
+  template:
+    metadata:
+      labels: { app: web }
+    spec:
+      # restricted 위반 상태 — 파드가 거부되어 뜨지 않는다. securityContext 로 고쳐야 함.
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+---
+# ---------- q2. NetworkPolicy (deny-all + DNS + 특정 ns 허용) · ns m1-netpol ----------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: m1-netpol
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: m1-netpol-client
+  labels:
+    team: trusted        # 이 라벨을 가진 네임스페이스에서 오는 트래픽만 허용해야 함
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  namespace: m1-netpol
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: db }
+  template:
+    metadata:
+      labels: { app: db }
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports: [{ containerPort: 80 }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: m1-netpol
+spec:
+  selector: { app: db }
+  ports: [{ port: 80, targetPort: 80 }]
+---
+# 허용돼야 하는 클라이언트 (신뢰 ns)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: m1-netpol-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: client }
+  template:
+    metadata:
+      labels: { app: client }
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+---
+# 차단돼야 하는 클라이언트 (db 와 같은 ns, 라벨만 다름)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intruder
+  namespace: m1-netpol
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: intruder }
+  template:
+    metadata:
+      labels: { app: intruder }
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+---
+# ---------- q3. TLS Ingress (ssl-redirect + tls 블록) · ns m1-tls ----------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: m1-tls
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop
+  namespace: m1-tls
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: shop }
+  template:
+    metadata:
+      labels: { app: shop }
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports: [{ containerPort: 80 }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop
+  namespace: m1-tls
+spec:
+  selector: { app: shop }
+  ports: [{ port: 80, targetPort: 80 }]
+---
+# HTTP 전용 Ingress — 여기에 tls 블록 + ssl-redirect 어노테이션을 추가해야 함
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shop
+  namespace: m1-tls
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: shop.m1.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: shop
+                port:
+                  number: 80
+---
+# ---------- q4. RBAC (위험한 ClusterRoleBinding 제거) · ns m1-rbac ----------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: m1-rbac
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ci-bot
+  namespace: m1-rbac
+---
+# ⚠️ SA 에게 클러스터 전역 cluster-admin 을 주는 위험한 바인딩 — 찾아서 삭제해야 함
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: m1-ci-bot-admin
+subjects:
+  - kind: ServiceAccount
+    name: ci-bot
+    namespace: m1-rbac
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io

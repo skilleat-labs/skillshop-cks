@@ -1,0 +1,14 @@
+# q4용 기본 audit 정책 — 노드의 /etc/kubernetes/audit-policy.yaml 로 복사해서 사용
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  # secrets/configmaps 의 데이터 노출 방지: 메타데이터만
+  - level: Metadata
+    resources:
+      - group: ""
+        resources: ["secrets", "configmaps"]
+  # 나머지 요청은 Request 레벨로 기록
+  - level: Request
+    verbs: ["create", "update", "patch", "delete"]
+  # 읽기성 노이즈는 최소화
+  - level: Metadata

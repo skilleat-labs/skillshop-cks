@@ -1,0 +1,45 @@
+# q2 정답 — deny-all + DNS egress + 신뢰 ns(team=trusted) 에서 db ingress 허용
+# 적용: kubectl apply -f solutions/q2-netpol.yaml
+---
+# 1) 기본 deny-all (ingress + egress)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: m1-netpol
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+# 2) 모든 Pod 의 DNS(coredns) egress 허용
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: m1-netpol
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector: {}      # kube-system 의 coredns 포함 전 ns 대상 53 만
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# 3) team=trusted 네임스페이스 → db ingress 허용
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-trusted-to-db
+  namespace: m1-netpol
+spec:
+  podSelector:
+    matchLabels: { app: db }
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { team: trusted }
+      ports:
+        - { protocol: TCP, port: 80 }
