@@ -8,3 +8,6 @@ __pycache__/
 # 강의 PPT는 git에 올리지 않음
 *.pptx
 labs/
+
+# 실습 중 학생이 수정하는 작업 파일(exam-start.sh 가 생성)
+practice/*/work/
