@@ -5,6 +5,7 @@
 ./exam-start.sh                        # 초기화 + work/ 작업파일 생성
 vim work/q1-app-role.yaml
 kubectl apply -f work/q1-app-role.yaml
+bash verify.sh                         # 자동 채점(6문제)
 ```
 문제 유형별로 제공 방식이 다릅니다 (실제 시험도 이렇게 섞여 나옵니다):
 

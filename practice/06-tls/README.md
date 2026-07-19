@@ -23,6 +23,7 @@ echo "$NODE_IP:$HTTPS_PORT"
 ./exam-start.sh                          # 초기화(Secret 삭제) + work/ 생성
 vim work/q2-shop-ingress.yaml
 kubectl apply -f work/q2-shop-ingress.yaml
+bash verify.sh                           # 자동 채점(TLS 핸드셰이크 포함)
 ```
 | 유형 | 문제 | work 파일 |
 |------|------|-----------|

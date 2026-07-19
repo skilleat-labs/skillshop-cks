@@ -14,7 +14,7 @@ header() { # $1=번호 $2=파일명 $3=설명
   echo "# $3"
   echo "#"
   echo "# 아래에 정책을 직접 작성한 뒤:  kubectl apply -f work/$2"
-  echo "# 검증:   README.md 의 문제 $1 검증 명령 (wget 으로 통신 확인)"
+  echo "# 채점:   bash verify.sh"
   echo "# 초기화: ./exam-start.sh"
   echo "# ============================================================"
 }

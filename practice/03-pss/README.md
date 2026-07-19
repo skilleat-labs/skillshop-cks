@@ -5,6 +5,7 @@
 ./exam-start.sh                        # 초기화 + work/ 작업파일 생성
 vim work/q1-web.yaml                   # 파일 직접 수정
 kubectl apply -f work/q1-web.yaml
+bash verify.sh                         # 자동 채점
 ```
 - `work/q1-web.yaml` [수정] · `work/q2-namespace.yaml` [수정]
 - 원본 `problem-*.yaml` 은 보존되며, `./exam-start.sh` 재실행으로 언제든 초기화됩니다.

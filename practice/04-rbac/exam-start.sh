@@ -24,7 +24,7 @@ header() { # $1=번호 $2=파일명 $3=설명 $4=유형
   echo "# $3"
   echo "#"
   echo "# 적용:   kubectl apply -f work/$2"
-  echo "# 검증:   README.md 의 문제 $1 검증 명령 (kubectl auth can-i ...)"
+  echo "# 채점:   bash verify.sh"
   echo "# 초기화: ./exam-start.sh"
   echo "# ============================================================"
 }

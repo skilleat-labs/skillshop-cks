@@ -10,6 +10,7 @@
 ./exam-start.sh                        # 초기화(기존 정책 삭제) + work/ 생성
 vim work/q1-netpol.yaml                # 정책을 직접 작성
 kubectl apply -f work/q1-netpol.yaml
+bash verify.sh                         # 자동 채점(실제 통신 테스트)
 ```
 5강은 세 문제 모두 **[생성]** 유형이라, `work/` 파일은 요구사항만 적힌 빈 파일로 제공됩니다.
 (`q1-netpol.yaml` · `q2-netpol.yaml` · `q3-cnp.yaml`)
@@ -34,7 +35,9 @@ kubectl exec -n netpol-ex1 deploy/attacker -- wget -qO- --timeout=3 http://db   
 ## 문제 2 — deny-all + DNS 허용 · ns `netpol-ex2`
 deny-all(Ingress+Egress) 후 DNS(53)만 허용.
 ```bash
-kubectl exec -n netpol-ex2 deploy/tester -- nslookup kubernetes.default                       # 해석됨
+kubectl exec -n netpol-ex2 deploy/tester -- nslookup kubernetes.default.svc.cluster.local   # 해석됨
+# ⚠️ 짧은 이름(kubernetes.default)으로 조회하면 busybox nslookup 이 search 도메인을 안 붙여
+#    DNS 가 정상인데도 NXDOMAIN 이 뜬다. 반드시 FQDN 으로 확인할 것.
 kubectl exec -n netpol-ex2 deploy/tester -- wget -qO- --timeout=3 http://kubernetes.default   # timeout
 ```
 
