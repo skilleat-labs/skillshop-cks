@@ -18,6 +18,20 @@ export HTTPS_PORT=$(kubectl -n ingress-nginx get svc ingress-nginx-controller -o
 echo "$NODE_IP:$HTTPS_PORT"
 ```
 
+## 방법 A — 시험 방식 (권장)
+```bash
+./exam-start.sh                          # 초기화(Secret 삭제) + work/ 생성
+vim work/q2-shop-ingress.yaml
+kubectl apply -f work/q2-shop-ingress.yaml
+```
+| 유형 | 문제 | work 파일 |
+|------|------|-----------|
+| **CLI** | q1(shop-tls 생성), q3(api-tls 생성) | 없음 — `openssl` + `kubectl create secret tls` |
+| **수정** | q2(Ingress 에 TLS 추가) | `work/q2-shop-ingress.yaml` |
+
+> `exam-start.sh` 는 ingress-nginx 설치 여부를 먼저 확인하고, 노드IP·HTTPS NodePort 를 출력합니다.
+
+## 방법 B — 환경만 올리기
 ```bash
 kubectl apply -f setup.yaml        # 문제 1·2 환경 (shop)
 kubectl apply -f problem-3.yaml    # 문제 3 환경 (api)

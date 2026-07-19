@@ -5,6 +5,19 @@
 > (확인: `kubectl get pods -n kube-system | grep cilium` 이 Running)
 > 문제 3은 **Cilium CNI + mutual authentication 기능(SPIRE)** 이 켜져 있어야 동작.
 
+## 방법 A — 시험 방식 (권장)
+```bash
+./exam-start.sh                        # 초기화(기존 정책 삭제) + work/ 생성
+vim work/q1-netpol.yaml                # 정책을 직접 작성
+kubectl apply -f work/q1-netpol.yaml
+```
+5강은 세 문제 모두 **[생성]** 유형이라, `work/` 파일은 요구사항만 적힌 빈 파일로 제공됩니다.
+(`q1-netpol.yaml` · `q2-netpol.yaml` · `q3-cnp.yaml`)
+
+> `./exam-start.sh` 는 **기존 정책을 전부 삭제**하고 시작합니다. 앞 문제의 정책이 남아 있으면
+> 다음 문제 통신 결과가 오염되기 때문입니다.
+
+## 방법 B — 환경만 올리고 직접 작성
 ```bash
 kubectl apply -f problem-1.yaml
 kubectl apply -f problem-2.yaml

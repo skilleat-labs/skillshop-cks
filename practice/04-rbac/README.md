@@ -1,5 +1,23 @@
 # 4강 실습 — RBAC + ServiceAccount
 
+## 방법 A — 시험 방식 (권장)
+```bash
+./exam-start.sh                        # 초기화 + work/ 작업파일 생성
+vim work/q1-app-role.yaml
+kubectl apply -f work/q1-app-role.yaml
+```
+문제 유형별로 제공 방식이 다릅니다 (실제 시험도 이렇게 섞여 나옵니다):
+
+| 유형 | 문제 | work 파일 |
+|------|------|-----------|
+| **수정** | q1(Role 축소), q3(automount) | 기존 매니페스트 제공 |
+| **생성** | q2(Role+RB), q5(ClusterRole+CRB) | 요구사항만 적힌 빈 파일 |
+| **삭제** | q4, q6 | 없음 — `kubectl delete` 로 해결 |
+
+> 생성 문제는 `kubectl create ... --dry-run=client -o yaml` 로 뼈대를 뽑는 게 가장 빠릅니다.
+> ⚠️ `>>` 로 두 문서를 이어붙일 땐 사이에 `echo '---'` 를 넣어야 합니다. 안 그러면 문서가 합쳐져 `unknown field "rules"` 에러가 납니다.
+
+## 방법 B — 직접 수정
 ```bash
 for n in 1 2 3 4 5 6; do kubectl apply -f problem-$n.yaml; done
 ```
