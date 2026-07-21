@@ -85,7 +85,7 @@ echo "   work/q2-reader-rbac.yaml   [생성 · 빈 파일]"
 echo "   work/q3-robot-client.yaml   [수정]"
 
 # ---- q5 [생성] ClusterRole + ClusterRoleBinding
-{ header 5 "q5-inspector-rbac.yaml" "ns rbac-ex5 / sa inspector — 노드를 list 할 수 있게 하라 (노드는 클러스터 범위)" "생성"
+{ header 5 "q5-inspector-rbac.yaml" "ns rbac-ex5 / sa inspector — 노드를 list 할 수 있게 하라" "생성"
   hint "#"
   hint "# 아래에 직접 작성하세요. imperative 로 뼈대를 뽑는 방법:"
   hint "#   kubectl create clusterrole node-reader --verb=list --resource=nodes \\"

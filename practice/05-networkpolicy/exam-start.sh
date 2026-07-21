@@ -55,7 +55,7 @@ echo "   work/q1-netpol.yaml"
 } > work/q2-netpol.yaml
 echo "   work/q2-netpol.yaml"
 
-{ header 3 "q3-cnp.yaml" "ns cnp-ex / deploy target — CiliumNetworkPolicy 로 mutual auth 를 요구하라"
+{ header 3 "q3-cnp.yaml" "ns cnp-ex / deploy target — 아래 세 조건을 모두 만족하는 정책을 작성하라"
   echo "# 요구사항: ① cnp-client 네임스페이스의 Pod → target 접근 허용"
   echo "#           ② 그 접근에는 mutual authentication 필수"
   echo "#           ③ host 접근은 mutual auth 없이 허용"
