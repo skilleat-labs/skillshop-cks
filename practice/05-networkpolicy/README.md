@@ -41,7 +41,9 @@ deny-all(Ingress+Egress) 후 DNS(53)만 허용.
 kubectl exec -n netpol-ex2 deploy/tester -- nslookup kubernetes.default.svc.cluster.local   # 해석됨
 # ⚠️ 짧은 이름(kubernetes.default)으로 조회하면 busybox nslookup 이 search 도메인을 안 붙여
 #    DNS 가 정상인데도 NXDOMAIN 이 뜬다. 반드시 FQDN 으로 확인할 것.
-kubectl exec -n netpol-ex2 deploy/tester -- wget -qO- --timeout=3 http://kubernetes.default   # timeout
+kubectl exec -n netpol-ex2 deploy/tester -- nc -z -w 3 kubernetes.default 443   # 차단(실패)돼야 성공
+# ⚠️ http://kubernetes.default (80) 로 확인하면 안 된다. 이 서비스는 443 만 열려 있어
+#    정책이 없어도 실패한다 → 안 만들고도 통과한 것처럼 보인다.
 ```
 
 ## 문제 3 — Cilium 상호 인증 · ns `cnp-ex`, deploy `target`

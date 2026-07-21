@@ -20,8 +20,14 @@ if kubectl exec -n netpol-ex2 deploy/tester -- \
 else
   ng "DNS 가 막힘 (egress 53 UDP/TCP 허용 필요)"
 fi
-reach netpol-ex2 tester http://kubernetes.default \
-  && ng "HTTP 가 뚫림(deny-all 미적용)" || ok "HTTP 차단됨"
+# ⚠️ http://kubernetes.default (80) 로 확인하면 안 된다. 이 서비스는 443 만 열려 있어서
+#    정책이 없어도 항상 실패한다 → 정책을 안 만들어도 PASS 가 되는 가짜 검사가 된다.
+#    실제로 열려 있는 443 을 nc 로 찔러 egress 차단 여부를 확인한다.
+if kubectl exec -n netpol-ex2 deploy/tester -- nc -z -w 3 kubernetes.default 443 >/dev/null 2>&1; then
+  ng "DNS 외 egress 가 열려 있음(deny-all 미적용)"
+else
+  ok "DNS 외 egress 차단됨"
+fi
 
 echo "[문제3] cnp-ex · CiliumNetworkPolicy mutual auth (구조 채점)"
 CNP=$(kubectl get cnp -n cnp-ex -o json 2>/dev/null)
