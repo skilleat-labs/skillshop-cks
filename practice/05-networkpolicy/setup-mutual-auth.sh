@@ -5,14 +5,21 @@ set -euo pipefail
 
 echo "==> Cilium mutual auth(SPIRE) 활성화 시작"
 
+# ⚠️ authentication.enabled 는 차트 기본값이 false 다. 이걸 빼고 spire 만 켜면
+#    helm 검증에서 아래 에러로 막힌다:
+#      "SPIRE integration requires .Values.authentication.enabled=true
+#       and .Values.authentication.mutual.spire.enabled=true"
+#    세 값을 반드시 함께 준다.
 if command -v cilium >/dev/null 2>&1; then
   echo "-- cilium CLI 사용"
   cilium upgrade --reuse-values \
+    --set authentication.enabled=true \
     --set authentication.mutual.spire.enabled=true \
     --set authentication.mutual.spire.install.enabled=true
 elif command -v helm >/dev/null 2>&1; then
   echo "-- helm 사용 (release 이름이 cilium 이 아니면 아래 cilium 부분을 바꾸세요)"
   helm upgrade cilium cilium/cilium -n kube-system --reuse-values \
+    --set authentication.enabled=true \
     --set authentication.mutual.spire.enabled=true \
     --set authentication.mutual.spire.install.enabled=true
 else
