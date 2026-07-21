@@ -7,6 +7,9 @@ vim work/q1-app-role.yaml
 kubectl apply -f work/q1-app-role.yaml
 bash verify.sh                         # 자동 채점(6문제)
 ```
+> `work/` 파일에는 **힌트가 없습니다.** 실제 시험도 필드 목록을 알려주지 않으니, 스스로 떠올리는 연습을 하세요.
+> 막히면 `./exam-start.sh --hints` 로 힌트를 넣어 다시 생성하거나, `solutions/` 를 확인하면 됩니다.
+
 문제 유형별로 제공 방식이 다릅니다 (실제 시험도 이렇게 섞여 나옵니다):
 
 | 유형 | 문제 | work 파일 |

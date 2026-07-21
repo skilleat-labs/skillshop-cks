@@ -9,6 +9,13 @@
 #   q3 [CLI]  지정된 이름으로 Secret → 파일 아님. 이름 확인 후 create secret tls
 set -u
 cd "$(dirname "$0")"
+# ── 힌트 게이트 ────────────────────────────────────────────────
+# 기본은 힌트 없이 생성한다. 실제 시험도 필드 목록을 알려주지 않으므로,
+# 스스로 떠올리는 연습(recall)이 되도록 하기 위함이다.
+# 막히면:  ./exam-start.sh --hints   (힌트를 넣어 다시 생성)
+HINTS=0
+[ "${1:-}" = "--hints" ] && HINTS=1
+hint() { [ "$HINTS" = "1" ] && printf '%s\n' "$@"; return 0; }
 
 extract() { # $1=파일 $2=kind [$3=name]
   awk -v k="$2" -v n="${3:-}" 'BEGIN{RS="---"}
@@ -45,11 +52,12 @@ mkdir -p work
   echo "#"
   echo "# 해야 할 것: ① tls 블록 추가 (host shop.example.com, secretName shop-tls)"
   echo "#             ② ssl-redirect 어노테이션 추가"
-  echo "# 힌트: nginx.ingress.kubernetes.io/ssl-redirect: \"true\""
-  echo "#       (Cilium Ingress 문제라면 ingress.cilium.io/force-https: \"enabled\")"
-  echo "#"
+  hint "# 힌트: nginx.ingress.kubernetes.io/ssl-redirect: \"true\""
+  hint "#       (Cilium Ingress 문제라면 ingress.cilium.io/force-https: \"enabled\")"
+  hint "#"
   echo "# 적용:   kubectl apply -f work/q2-shop-ingress.yaml"
   echo "# 초기화: ./exam-start.sh"
+  [ "$HINTS" = "1" ] || echo "# 막히면: ./exam-start.sh --hints  ·  정답: solutions/"
   echo "# ⚠️ 문제 1(shop-tls Secret 생성)을 먼저 풀어야 TLS 가 실제로 동작합니다."
   echo "# ============================================================"
   extract setup.yaml Ingress shop

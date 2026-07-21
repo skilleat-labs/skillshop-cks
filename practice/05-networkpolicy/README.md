@@ -12,6 +12,9 @@ vim work/q1-netpol.yaml                # 정책을 직접 작성
 kubectl apply -f work/q1-netpol.yaml
 bash verify.sh                         # 자동 채점(실제 통신 테스트)
 ```
+> `work/` 파일에는 **힌트가 없습니다.** 실제 시험도 필드 목록을 알려주지 않으니, 스스로 떠올리는 연습을 하세요.
+> 막히면 `./exam-start.sh --hints` 로 힌트를 넣어 다시 생성하거나, `solutions/` 를 확인하면 됩니다.
+
 5강은 세 문제 모두 **[생성]** 유형이라, `work/` 파일은 요구사항만 적힌 빈 파일로 제공됩니다.
 (`q1-netpol.yaml` · `q2-netpol.yaml` · `q3-cnp.yaml`)
 

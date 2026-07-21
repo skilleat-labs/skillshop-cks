@@ -7,6 +7,13 @@
 # work 파일은 요구사항만 적힌 빈 파일로 준다. (환경 파드는 클러스터에 이미 떠 있음)
 set -u
 cd "$(dirname "$0")"
+# ── 힌트 게이트 ────────────────────────────────────────────────
+# 기본은 힌트 없이 생성한다. 실제 시험도 필드 목록을 알려주지 않으므로,
+# 스스로 떠올리는 연습(recall)이 되도록 하기 위함이다.
+# 막히면:  ./exam-start.sh --hints   (힌트를 넣어 다시 생성)
+HINTS=0
+[ "${1:-}" = "--hints" ] && HINTS=1
+hint() { [ "$HINTS" = "1" ] && printf '%s\n' "$@"; return 0; }
 
 header() { # $1=번호 $2=파일명 $3=설명
   echo "# ============================================================"
@@ -16,6 +23,7 @@ header() { # $1=번호 $2=파일명 $3=설명
   echo "# 아래에 정책을 직접 작성한 뒤:  kubectl apply -f work/$2"
   echo "# 채점:   bash verify.sh"
   echo "# 초기화: ./exam-start.sh"
+  [ "$HINTS" = "1" ] || echo "# 막히면: ./exam-start.sh --hints  ·  정답: solutions/"
   echo "# ============================================================"
 }
 
@@ -34,15 +42,15 @@ echo "==> 2. work/ 에 작업용 매니페스트 생성"
 mkdir -p work
 
 { header 1 "q1-netpol.yaml" "ns netpol-ex1 — db 는 app=web 에서 오는 것만 허용하고 나머지는 차단하라"
-  echo "# 힌트: podSelector 로 대상(db)을 고르고, ingress.from.podSelector 로 출발지를 제한한다."
-  echo "#       kubectl explain networkpolicy.spec.ingress --recursive"
+  hint "# 힌트: podSelector 로 대상(db)을 고르고, ingress.from.podSelector 로 출발지를 제한한다."
+  hint "#       kubectl explain networkpolicy.spec.ingress --recursive"
   echo ""
 } > work/q1-netpol.yaml
 echo "   work/q1-netpol.yaml"
 
 { header 2 "q2-netpol.yaml" "ns netpol-ex2 — deny-all(Ingress+Egress) 후 DNS(53)만 허용하라"
-  echo "# 힌트: 정책 두 개로 나눠 쓰면 쉽다. ① podSelector {} 로 전체 deny"
-  echo "#       ② egress 로 UDP/TCP 53 만 허용. (DNS 를 막으면 이름 해석이 죽는다)"
+  hint "# 힌트: 정책 두 개로 나눠 쓰면 쉽다. ① podSelector {} 로 전체 deny"
+  hint "#       ② egress 로 UDP/TCP 53 만 허용. (DNS 를 막으면 이름 해석이 죽는다)"
   echo ""
 } > work/q2-netpol.yaml
 echo "   work/q2-netpol.yaml"
@@ -51,8 +59,8 @@ echo "   work/q2-netpol.yaml"
   echo "# 요구사항: ① cnp-client 네임스페이스의 Pod → target 접근 허용"
   echo "#           ② 그 접근에는 mutual authentication 필수"
   echo "#           ③ host 접근은 mutual auth 없이 허용"
-  echo "# 핵심 3가지: kind: CiliumNetworkPolicy / authentication.mode: \"required\" / fromEntities: [host]"
-  echo "# 라벨 매칭은 k8s:io.kubernetes.pod.namespace 사용. 허용문서: https://docs.cilium.io"
+  hint "# 핵심 3가지: kind: CiliumNetworkPolicy / authentication.mode: \"required\" / fromEntities: [host]"
+  hint "# 라벨 매칭은 k8s:io.kubernetes.pod.namespace 사용. 허용문서: https://docs.cilium.io"
   echo "# ⚠️ enforcement 는 SPIRE 활성 필요 → ./setup-mutual-auth.sh (클러스터당 1회)"
   echo ""
 } > work/q3-cnp.yaml

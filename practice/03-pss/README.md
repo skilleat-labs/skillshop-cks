@@ -7,6 +7,9 @@ vim work/q1-web.yaml                   # 파일 직접 수정
 kubectl apply -f work/q1-web.yaml
 bash verify.sh                         # 자동 채점
 ```
+> `work/` 파일에는 **힌트가 없습니다.** 실제 시험도 필드 목록을 알려주지 않으니, 스스로 떠올리는 연습을 하세요.
+> 막히면 `./exam-start.sh --hints` 로 힌트를 넣어 다시 생성하거나, `solutions/` 를 확인하면 됩니다.
+
 - `work/q1-web.yaml` [수정] · `work/q2-namespace.yaml` [수정]
 - 원본 `problem-*.yaml` 은 보존되며, `./exam-start.sh` 재실행으로 언제든 초기화됩니다.
 - ⚠️ 파일만 고치고 **apply 안 하면 0점** — 채점은 클러스터 실제 상태를 봅니다.

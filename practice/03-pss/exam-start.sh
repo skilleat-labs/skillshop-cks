@@ -5,6 +5,13 @@
 # 다시 실행하면 초기화된다. (work/ 안의 내 작업도 덮어씀)
 set -u
 cd "$(dirname "$0")"
+# ── 힌트 게이트 ────────────────────────────────────────────────
+# 기본은 힌트 없이 생성한다. 실제 시험도 필드 목록을 알려주지 않으므로,
+# 스스로 떠올리는 연습(recall)이 되도록 하기 위함이다.
+# 막히면:  ./exam-start.sh --hints   (힌트를 넣어 다시 생성)
+HINTS=0
+[ "${1:-}" = "--hints" ] && HINTS=1
+hint() { [ "$HINTS" = "1" ] && printf '%s\n' "$@"; return 0; }
 
 # 특정 kind(+name) 문서만 원본에서 추출
 extract() { # $1=파일 $2=kind [$3=name]
@@ -23,6 +30,7 @@ header() { # $1=번호 $2=파일명 $3=설명
   echo "# 이 파일을 수정한 뒤:  kubectl apply -f work/$2"
   echo "# 채점:   bash verify.sh"
   echo "# 초기화: ./exam-start.sh"
+  [ "$HINTS" = "1" ] || echo "# 막히면: ./exam-start.sh --hints  ·  정답: solutions/"
   echo "# ============================================================"
 }
 
@@ -43,16 +51,16 @@ echo "==> 2. work/ 에 작업용 매니페스트 생성"
 mkdir -p work
 
 { header 1 "q1-web.yaml" "ns pss-ex1 / deploy web — restricted 정책을 만족시켜 Running 시켜라"
-  echo "# 힌트: restricted 4대 = runAsNonRoot / seccompProfile RuntimeDefault /"
-  echo "#       allowPrivilegeEscalation false / capabilities drop ALL"
-  echo "#       위치는 spec.template.spec (파드) 와 containers[] (컨테이너) 로 나뉜다."
+  hint "# 힌트: restricted 4대 = runAsNonRoot / seccompProfile RuntimeDefault /"
+  hint "#       allowPrivilegeEscalation false / capabilities drop ALL"
+  hint "#       위치는 spec.template.spec (파드) 와 containers[] (컨테이너) 로 나뉜다."
   extract problem-1.yaml Deployment
 } > work/q1-web.yaml
 echo "   work/q1-web.yaml"
 
 { header 2 "q2-namespace.yaml" "ns pss-ex2 — restricted 를 enforce 하고 warn 도 켜라"
-  echo "# 힌트: metadata.labels 에 pod-security.kubernetes.io/<모드>=<레벨> 형태로 추가."
-  echo "#       (명령으로 하면: kubectl label ns pss-ex2 ...)"
+  hint "# 힌트: metadata.labels 에 pod-security.kubernetes.io/<모드>=<레벨> 형태로 추가."
+  hint "#       (명령으로 하면: kubectl label ns pss-ex2 ...)"
   extract problem-2.yaml Namespace pss-ex2
 } > work/q2-namespace.yaml
 echo "   work/q2-namespace.yaml"

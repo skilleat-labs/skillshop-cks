@@ -25,6 +25,9 @@ vim work/q2-shop-ingress.yaml
 kubectl apply -f work/q2-shop-ingress.yaml
 bash verify.sh                           # 자동 채점(TLS 핸드셰이크 포함)
 ```
+> `work/` 파일에는 **힌트가 없습니다.** 실제 시험도 필드 목록을 알려주지 않으니, 스스로 떠올리는 연습을 하세요.
+> 막히면 `./exam-start.sh --hints` 로 힌트를 넣어 다시 생성하거나, `solutions/` 를 확인하면 됩니다.
+
 | 유형 | 문제 | work 파일 |
 |------|------|-----------|
 | **CLI** | q1(shop-tls 생성), q3(api-tls 생성) | 없음 — `openssl` + `kubectl create secret tls` |
