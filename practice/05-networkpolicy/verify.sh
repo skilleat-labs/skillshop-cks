@@ -38,8 +38,21 @@ else
     && ok "authentication.mode: required" || ng "mutual auth(required) 설정 없음"
   echo "$CNP" | grep -q '"host"' \
     && ok "fromEntities: host 허용" || ng "host 예외 없음"
-  echo "$CNP" | grep -q 'cnp-client' \
-    && ok "cnp-client 네임스페이스 셀렉터" || ng "client 네임스페이스 셀렉터 없음"
+  # ⚠️ JSON 에 'cnp-client' 문자열이 있는지만 보면 안 된다. 라벨 '키'가 틀려도
+  #    (예: k8s: 접두사 없는 kubernetes.io/metadata.name) 값만 맞으면 통과해버린다.
+  #    실제로 통신이 되는지로 채점한다. (SPIRE 활성 시에만 유효)
+  if kubectl get pods -n cilium-spire --no-headers 2>/dev/null | grep -q Running; then
+    if kubectl exec -n cnp-client deploy/client -- \
+         wget -qO- --timeout=8 http://target.cnp-ex >/dev/null 2>&1; then
+      ok "cnp-client → target 실제 통신(상호 인증 통과)"
+    else
+      ng "cnp-client → target 이 차단됨 — 셀렉터 라벨 키 확인 (k8s:io.kubernetes.pod.namespace)"
+    fi
+  else
+    echo "$CNP" | grep -q 'cnp-client' \
+      && ok "cnp-client 셀렉터(문자열 확인 — SPIRE 미활성이라 통신검증 불가)" \
+      || ng "client 네임스페이스 셀렉터 없음"
+  fi
   VALID=$(kubectl get cnp -n cnp-ex -o jsonpath='{.items[0].status.conditions[?(@.type=="Valid")].status}' 2>/dev/null)
   [ "$VALID" = "False" ] && echo "     ℹ️ VALID=False — Cilium SPIRE 미활성. 실제 enforcement 는 ./setup-mutual-auth.sh 실행 후 확인."
 fi
