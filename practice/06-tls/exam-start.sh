@@ -38,11 +38,27 @@ kubectl delete secret api-tls  -n tls-ex2 --ignore-not-found >/dev/null 2>&1
 # Ingress 는 tls 블록/어노테이션이 붙었을 수 있으니 지우고 다시 만든다
 kubectl delete ingress shop -n tls-ex  --ignore-not-found >/dev/null 2>&1
 kubectl delete ingress api  -n tls-ex2 --ignore-not-found >/dev/null 2>&1
+# 문제 4(Cilium SNI egress) 초기화 — 학생이 만든 정책 제거
+kubectl delete cnp --all -n tls-egress --ignore-not-found >/dev/null 2>&1
 kubectl apply -f setup.yaml    >/dev/null
 kubectl apply -f problem-3.yaml >/dev/null
-kubectl wait --for=condition=Ready pod -l app=shop -n tls-ex  --timeout=90s >/dev/null 2>&1
-kubectl wait --for=condition=Ready pod -l app=api  -n tls-ex2 --timeout=90s >/dev/null 2>&1
-echo "   tls-ex(shop, HTTP 전용) / tls-ex2(api, secretName 만 지정됨) 재생성됨"
+
+# 문제 4 서버의 TLS Secret 을 미리 만든다 (인터넷 없이 nginx 가 HTTPS 를 서빙하도록).
+# SNI 필터는 클라이언트가 보내는 SNI 를 검사하므로, 서버 인증서 내용은 중요하지 않다.
+kubectl get ns tls-egress >/dev/null 2>&1 || kubectl create ns tls-egress >/dev/null 2>&1
+if command -v openssl >/dev/null 2>&1; then
+  openssl req -x509 -nodes -newkey rsa:2048 -days 365 \
+    -keyout /tmp/srv.key -out /tmp/srv.crt -subj "/CN=srv" >/dev/null 2>&1
+  kubectl create secret tls srv-tls -n tls-egress \
+    --cert=/tmp/srv.crt --key=/tmp/srv.key --dry-run=client -o yaml | kubectl apply -f - >/dev/null 2>&1
+fi
+kubectl apply -f problem-4.yaml >/dev/null
+
+kubectl wait --for=condition=Ready pod -l app=shop    -n tls-ex     --timeout=90s >/dev/null 2>&1
+kubectl wait --for=condition=Ready pod -l app=api     -n tls-ex2    --timeout=90s >/dev/null 2>&1
+kubectl wait --for=condition=Ready pod -l app=httpsvc -n tls-egress --timeout=90s >/dev/null 2>&1
+kubectl wait --for=condition=Ready pod -l app=client  -n tls-egress --timeout=90s >/dev/null 2>&1
+echo "   tls-ex(shop, HTTP 전용) / tls-ex2(api, secretName 만 지정됨) / tls-egress(문제4) 재생성됨"
 
 # 문제 3용 인증서/키를 미리 제공한다 (실제 시험처럼 파일이 주어진 상태).
 # → 문제 1(직접 생성)과 달리, 문제 3 은 "주어진 파일로 Secret 만들기"를 연습.
@@ -77,6 +93,27 @@ mkdir -p work
 } > work/q2-shop-ingress.yaml
 echo "   work/q2-shop-ingress.yaml   [수정]"
 
+# 문제 4 [생성] — CiliumNetworkPolicy 를 직접 작성
+{ echo "# ============================================================"
+  echo "# CKS 6강 실습 (시험 방식) — 문제 4  [생성]"
+  echo "# ns tls-egress / deploy client — Cilium 으로 HTTPS egress 를 SNI 로 통제하라"
+  echo "#"
+  echo "# 해야 할 것: client 파드가"
+  echo "#   ① HTTPS(443) 로는 SNI 가 allowed.example.com 인 곳만 나갈 수 있게 하고"
+  echo "#   ② 그 외 SNI 의 HTTPS 는 차단하라 (같은 서버라도 SNI 가 다르면 막힘)"
+  echo "#   ③ DNS 는 열어둘 것 (안 그러면 이름 해석부터 죽는다)"
+  hint "# 힌트: 표준 NetworkPolicy 로는 불가능. CiliumNetworkPolicy egress 의"
+  hint "#       toPorts.serverNames 를 쓴다. (kubectl explain ciliumnetworkpolicy.spec.egress.toPorts)"
+  echo "#"
+  echo "# 아래에 정책을 직접 작성한 뒤:  kubectl apply -f work/q4-cnp-sni.yaml"
+  echo "# 초기화: ./exam-start.sh"
+  [ "$HINTS" = "1" ] || echo "# 막히면: ./exam-start.sh --hints  ·  정답: solutions/problem-4.yaml"
+  echo "# ⚠️ SNI 검사는 Cilium L7 프록시(Envoy)로 동작 — 이 클러스터는 이미 켜져 있음."
+  echo "# ============================================================"
+  echo ""
+} > work/q4-cnp-sni.yaml
+echo "   work/q4-cnp-sni.yaml   [생성]"
+
 NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null)
 HTTPS_PORT=$(kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}' 2>/dev/null)
 
@@ -92,6 +129,16 @@ echo "  [문제 3] 인증서는 이미 /tmp/api-tls/ 에 있음 → 그 파일�
 echo "    kubectl get ingress api -n tls-ex2 -o jsonpath='{.spec.tls[0].secretName}'   # 먼저 이름 확인"
 echo "    # (힌트 없이 풀려면: 어떤 파일이 있는지 ls /tmp/api-tls/ 로 확인)"
 echo ""
+echo ""
+echo "  [문제 4] Cilium SNI egress 필터 — work/q4-cnp-sni.yaml 에 정책 작성:"
+echo "    SRV=\$(kubectl get svc httpsvc -n tls-egress -o jsonpath='{.spec.clusterIP}')"
+echo "    kubectl exec -n tls-egress deploy/client -- curl -sk -m8 -o /dev/null -w '%{http_code}\\n' \\"
+echo "      https://allowed.example.com/ --resolve allowed.example.com:443:\$SRV   # 허용→200"
+echo "    kubectl exec -n tls-egress deploy/client -- curl -sk -m8 \\"
+echo "      https://blocked.example.com/ --resolve blocked.example.com:443:\$SRV   # 차단→exit 35"
+echo ""
 echo "테스트용 (VM = NodePort):"
 echo "    export NODE_IP=$NODE_IP HTTPS_PORT=$HTTPS_PORT"
 echo "    curl -vk https://shop.example.com:\$HTTPS_PORT --resolve shop.example.com:\$HTTPS_PORT:\$NODE_IP"
+echo ""
+echo "채점: bash verify.sh"

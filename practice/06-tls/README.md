@@ -32,13 +32,16 @@ bash verify.sh                           # 자동 채점(TLS 핸드셰이크 포
 |------|------|-----------|
 | **CLI** | q1(shop-tls 생성), q3(api-tls 생성) | 없음 — `openssl` + `kubectl create secret tls` |
 | **수정** | q2(Ingress 에 TLS 추가) | `work/q2-shop-ingress.yaml` |
+| **생성** | q4(Cilium SNI egress 필터) | `work/q4-cnp-sni.yaml` |
 
 > `exam-start.sh` 는 ingress-nginx 설치 여부를 먼저 확인하고, 노드IP·HTTPS NodePort 를 출력합니다.
+> 문제 3 인증서는 `/tmp/api-tls/`, 문제 4 서버 TLS Secret 은 자동 생성됩니다.
 
 ## 방법 B — 환경만 올리기
 ```bash
 kubectl apply -f setup.yaml        # 문제 1·2 환경 (shop)
 kubectl apply -f problem-3.yaml    # 문제 3 환경 (api)
+kubectl apply -f problem-4.yaml    # 문제 4 환경 (tls-egress) — 서버 Secret 은 exam-start.sh 가 생성
 ```
 
 ## 문제 1 — TLS Secret 만들기 · ns `tls-ex`
@@ -68,9 +71,23 @@ kubectl get secret api-tls -n tls-ex2 -o jsonpath='{.type}'                     
 curl -vk https://api.example.com:$HTTPS_PORT --resolve api.example.com:$HTTPS_PORT:$NODE_IP   # 우리 인증서로 handshake
 ```
 
+## 문제 4 — Cilium SNI 기반 egress TLS 필터링 · ns `tls-egress`, deploy `client` (CiliumNetworkPolicy)
+표준 NetworkPolicy 는 IP·포트까지만 본다. Cilium 은 L7 프록시로 **TLS SNI(접속 호스트명)** 를 검사해
+HTTPS 목적지를 **호스트명 단위**로 통제할 수 있다(암호는 안 푼다 — SNI 만).
+`client` 파드가 **HTTPS 는 SNI `allowed.example.com` 인 곳만** 나가고, 다른 SNI 는 차단되게 하라(+DNS 허용).
+정답: `solutions/problem-4.yaml` · `solutions/problem-4.md`
+```bash
+SRV=$(kubectl get svc httpsvc -n tls-egress -o jsonpath='{.spec.clusterIP}')
+kubectl exec -n tls-egress deploy/client -- curl -sk -m8 -o /dev/null -w '%{http_code}\n' \
+  https://allowed.example.com/ --resolve allowed.example.com:443:$SRV   # 허용 → 200
+kubectl exec -n tls-egress deploy/client -- curl -sk -m8 \
+  https://blocked.example.com/ --resolve blocked.example.com:443:$SRV   # 차단 → curl exit 35
+```
+> 핵심: `CiliumNetworkPolicy` egress `toPorts.serverNames`. 표준 NetworkPolicy 로는 불가능한, "Cilium 이 TLS 로 하는 것".
+
 ## 정리
 ```bash
-kubectl delete -f setup.yaml -f problem-3.yaml
+kubectl delete -f setup.yaml -f problem-3.yaml -f problem-4.yaml
 kubectl delete secret shop-tls -n tls-ex 2>/dev/null
 ```
 > ingress-nginx 컨트롤러는 **안 지웁니다**(다른 실습에서도 쓸 수 있게 남겨둠).

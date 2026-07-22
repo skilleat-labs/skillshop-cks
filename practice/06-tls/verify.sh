@@ -38,5 +38,25 @@ else
   echo "[추가] ingress-nginx NodePort 를 못 찾아 핸드셰이크 검증은 건너뜀"
 fi
 
+echo "[문제4] tls-egress · client egress 를 SNI 로 통제 (allowed 만 허용)"
+SRV=$(kubectl get svc httpsvc -n tls-egress -o jsonpath='{.spec.clusterIP}' 2>/dev/null)
+if [ -n "$SRV" ]; then
+  # 허용된 SNI 는 통해야(200), 다른 SNI 는 막혀야(curl 실패) 한다 — 둘 다 만족해야 PASS
+  A=$(kubectl exec -n tls-egress deploy/client -- curl -sk -m8 -o /dev/null -w "%{http_code}" \
+        https://allowed.example.com/ --resolve allowed.example.com:443:"$SRV" 2>/dev/null)
+  if kubectl exec -n tls-egress deploy/client -- curl -sk -m8 -o /dev/null \
+        https://blocked.example.com/ --resolve blocked.example.com:443:"$SRV" >/dev/null 2>&1; then
+    B="열림"; else B="차단"; fi
+  if [ "$A" = "200" ] && [ "$B" = "차단" ]; then
+    ok "allowed SNI 허용(200) + blocked SNI 차단"
+  elif [ "$A" = "200" ]; then
+    ng "blocked SNI 가 아직 열려 있음 (serverNames 로 다른 SNI 를 막아야 함)"
+  else
+    ng "allowed SNI 마저 안 됨 (A=$A) — DNS egress 또는 serverNames/toEndpoints 확인"
+  fi
+else
+  echo "  [SKIP] tls-egress 환경 없음 — ./exam-start.sh 로 생성하세요"
+fi
+
 echo ""
 echo "채점 결과: PASS=$PASS  FAIL=$FAIL"

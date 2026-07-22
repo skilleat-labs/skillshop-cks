@@ -1,0 +1,33 @@
+# 문제 4 정답 — Cilium SNI 기반 egress TLS 필터링
+# 적용: kubectl apply -f solutions/problem-4.yaml
+#
+# 표준 NetworkPolicy 는 "어느 IP/포트로" 까지만 본다. Cilium 은 L7 프록시(Envoy)로
+# TLS ClientHello 의 SNI 를 들여다봐서, HTTPS 목적지를 '호스트명'으로 통제할 수 있다.
+# (암호를 풀지 않는다 — SNI 만 검사. 그래서 인증서 설정이 필요 없다.)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: client-egress-sni
+  namespace: tls-egress
+spec:
+  endpointSelector:
+    matchLabels:
+      app: client
+  egress:
+    # 1) DNS 는 열어준다 (안 그러면 이름 해석이 죽는다)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - { port: "53", protocol: ANY }
+    # 2) HTTPS(443) 는 SNI 가 allowed.example.com 인 것만 허용
+    - toEndpoints:
+        - matchLabels:
+            app: httpsvc
+      toPorts:
+        - ports:
+            - { port: "443", protocol: TCP }
+          serverNames:
+            - "allowed.example.com"

@@ -1,0 +1,77 @@
+# 문제 4 환경 — Cilium SNI 기반 egress TLS 필터링 (CiliumNetworkPolicy)
+# 적용:  kubectl apply -f problem-4.yaml
+# ⚠️ 서버 TLS Secret(srv-tls)은 exam-start.sh 가 미리 만들어 준다 (인터넷 불필요).
+#    수동으로 할 땐 먼저:
+#      openssl req -x509 -nodes -newkey rsa:2048 -days 365 -keyout tls.key -out tls.crt -subj "/CN=srv"
+#      kubectl create secret tls srv-tls -n tls-egress --cert=tls.crt --key=tls.key
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tls-egress
+---
+# HTTPS 서버 — SNI 필터 대상. 어떤 SNI 로 와도 응답한다(인증서 검증은 클라이언트가 -k 로 skip).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: srv-conf
+  namespace: tls-egress
+data:
+  default.conf: |
+    server {
+      listen 443 ssl;
+      ssl_certificate     /etc/tls/tls.crt;
+      ssl_certificate_key /etc/tls/tls.key;
+      location / { return 200 "ok\n"; }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpsvc
+  namespace: tls-egress
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: httpsvc }
+  template:
+    metadata:
+      labels: { app: httpsvc }
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports: [{ containerPort: 443 }]
+          volumeMounts:
+            - { name: tls,  mountPath: /etc/tls, readOnly: true }
+            - { name: conf, mountPath: /etc/nginx/conf.d }
+      volumes:
+        - { name: tls,  secret:    { secretName: srv-tls } }
+        - { name: conf, configMap: { name: srv-conf } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpsvc
+  namespace: tls-egress
+spec:
+  selector: { app: httpsvc }
+  ports: [{ port: 443, targetPort: 443 }]
+---
+# 클라이언트 — 이 파드의 egress 를 CiliumNetworkPolicy 로 통제해야 한다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: tls-egress
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: client }
+  template:
+    metadata:
+      labels: { app: client }
+    spec:
+      containers:
+        - name: c
+          image: curlimages/curl:8.10.1
+          command: ["sleep", "3600"]
