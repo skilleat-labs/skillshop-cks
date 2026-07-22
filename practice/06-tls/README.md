@@ -56,10 +56,12 @@ kubectl get secret shop-tls -n tls-ex -o jsonpath='{.type}'   # kubernetes.io/tl
 curl -vk https://shop.example.com:$HTTPS_PORT --resolve shop.example.com:$HTTPS_PORT:$NODE_IP
 ```
 
-## 문제 3 — 지정된 secretName 에 맞춰 Secret 생성 · ns `tls-ex2`, ingress `api`
+## 문제 3 — 제공된 인증서로 지정된 secretName 에 맞춰 Secret 생성 · ns `tls-ex2`, ingress `api`
 (시험 단골) `api` Ingress 에는 이미 `tls.secretName: api-tls` 가 지정돼 있는데 그 Secret 이 없어서 기본(가짜) 인증서가 뜬다.
-**Ingress 는 건드리지 말고**, `api-tls` 라는 **정확히 같은 이름**으로 TLS Secret 을 만들어 TLS 를 살려라. (CN = api.example.com) 정답: `solutions/problem-3.md`
+인증서/키는 **`/tmp/api-tls/` 에 미리 준비돼 있다**(문제 1처럼 직접 만들지 않는다).
+**Ingress 는 건드리지 말고**, 그 파일로 `api-tls` 라는 **정확히 같은 이름**의 TLS Secret 을 만들어 TLS 를 살려라. 정답: `solutions/problem-3.md`
 ```bash
+ls /tmp/api-tls/                                                                     # tls.crt tls.key (주어진 파일)
 kubectl get ingress api -n tls-ex2 -o jsonpath='{.spec.tls[0].secretName}'; echo   # api-tls (먼저 이름 확인)
 kubectl get secret api-tls -n tls-ex2 -o jsonpath='{.type}'                          # kubernetes.io/tls
 # VM(NodePort) 환경: :443 대신 HTTPS NodePort 를 지정

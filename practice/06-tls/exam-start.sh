@@ -44,6 +44,19 @@ kubectl wait --for=condition=Ready pod -l app=shop -n tls-ex  --timeout=90s >/de
 kubectl wait --for=condition=Ready pod -l app=api  -n tls-ex2 --timeout=90s >/dev/null 2>&1
 echo "   tls-ex(shop, HTTP 전용) / tls-ex2(api, secretName 만 지정됨) 재생성됨"
 
+# 문제 3용 인증서/키를 미리 제공한다 (실제 시험처럼 파일이 주어진 상태).
+# → 문제 1(직접 생성)과 달리, 문제 3 은 "주어진 파일로 Secret 만들기"를 연습.
+echo "==> 문제 3용 인증서/키를 /tmp/api-tls/ 에 미리 생성합니다"
+mkdir -p /tmp/api-tls
+if command -v openssl >/dev/null 2>&1; then
+  openssl req -x509 -nodes -newkey rsa:2048 -days 365 \
+    -keyout /tmp/api-tls/tls.key -out /tmp/api-tls/tls.crt \
+    -subj "/CN=api.example.com" >/dev/null 2>&1
+  echo "   /tmp/api-tls/tls.crt , /tmp/api-tls/tls.key  (CN=api.example.com)"
+else
+  echo "   ⚠️ openssl 이 없어 인증서를 못 만들었습니다. 수동 생성이 필요합니다."
+fi
+
 echo "==> 2. work/ 에 작업용 매니페스트 생성"
 mkdir -p work
 { echo "# ============================================================"
@@ -68,11 +81,16 @@ NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="
 HTTPS_PORT=$(kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}' 2>/dev/null)
 
 echo ""
-echo "※ 문제 1·3 은 [CLI] 유형이라 work 파일이 없습니다. 명령으로 Secret 을 만드는 게 문제입니다:"
+echo "※ 문제 1·3 은 [CLI] 유형이라 work 파일이 없습니다. 명령으로 Secret 을 만드는 게 문제입니다."
+echo ""
+echo "  [문제 1] 인증서를 직접 만들어서 Secret 생성 (shop-tls):"
 echo "    openssl req -x509 -nodes -newkey rsa:2048 -days 365 \\"
 echo "      -keyout tls.key -out tls.crt -subj \"/CN=shop.example.com\""
 echo "    kubectl create secret tls shop-tls -n tls-ex --cert=tls.crt --key=tls.key"
-echo "    kubectl get ingress api -n tls-ex2 -o jsonpath='{.spec.tls[0].secretName}'   # q3: 이름 먼저 확인"
+echo ""
+echo "  [문제 3] 인증서는 이미 /tmp/api-tls/ 에 있음 → 그 파일로 Secret 생성 (이름 정확히 api-tls):"
+echo "    kubectl get ingress api -n tls-ex2 -o jsonpath='{.spec.tls[0].secretName}'   # 먼저 이름 확인"
+echo "    # (힌트 없이 풀려면: 어떤 파일이 있는지 ls /tmp/api-tls/ 로 확인)"
 echo ""
 echo "테스트용 (VM = NodePort):"
 echo "    export NODE_IP=$NODE_IP HTTPS_PORT=$HTTPS_PORT"
