@@ -34,3 +34,38 @@ static pod 라 파일 저장 시 자동 재기동. `watch crictl ps` 로 재기�
 - `--peer-client-cert-auth=true`
 
 정답 라인은 `solutions.md` 참고.
+
+## 문제 4 — apiserver 익명 접근 차단 + kubeconfig 로 접근 테스트 (컨트롤플레인) · **시험 단골**
+(실제 CKS 유형) 특정 신원의 kubeconfig 가 주어지고, apiserver 를 수정한 뒤 그 kubeconfig 로
+접근이 의도대로 되는지 **직접 테스트**하는 문제.
+
+**준비 (한 번):**
+```bash
+./make-tester-kubeconfig.sh        # /tmp/tester.kubeconfig 생성 (CN=tester, 아직 권한 없음)
+```
+
+**과제:**
+1. 현재 apiserver 는 **익명 인증을 허용**한다. 확인:
+   ```bash
+   curl -sk https://<노드IP>:6443/api -o /dev/null -w "%{http_code}\n"   # 403 → 익명 인증됨(=허용 상태)
+   ```
+2. `/etc/kubernetes/manifests/kube-apiserver.yaml` 에서 익명 인증을 끄고(`--anonymous-auth=false`)
+   인가 모드를 `Node,RBAC` 로 둬라. (⚠️ 수정 전 백업)
+3. 주어진 `tester` 신원이 **파드를 조회(get/list)할 수 있도록** RBAC 를 부여하라(ClusterRole + Binding).
+
+**검증:**
+```bash
+# ① 익명은 이제 인증 자체가 막힘 (403 → 401 로 바뀜)
+curl -sk https://<노드IP>:6443/api -o /dev/null -w "%{http_code}\n"        # 401
+
+# ② tester 는 RBAC 덕에 파드 조회 가능
+kubectl --kubeconfig /tmp/tester.kubeconfig auth can-i list pods           # yes
+kubectl --kubeconfig /tmp/tester.kubeconfig get pods -n default            # 목록 나옴
+
+# ③ 권한 밖은 여전히 거부 (인증O·인가X → Forbidden)
+kubectl --kubeconfig /tmp/tester.kubeconfig auth can-i delete pods         # no
+```
+정답: `solutions.md` (문제 4). 채점: `bash verify.sh`
+
+> **핵심 개념 — 응답코드로 판별:** 401=인증 실패(익명 차단) · 403=인증 O·권한 X(RBAC 거부) · 200=허용.
+> "kubeconfig 로 테스트"는 `kubectl --kubeconfig <파일> auth can-i ...` 로 그 신원이 되어 물어보는 것.
