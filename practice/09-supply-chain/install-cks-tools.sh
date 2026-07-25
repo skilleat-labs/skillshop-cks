@@ -114,8 +114,9 @@ inst_bom() {
   if skip bom; then echo "== bom: 이미 있음 ($(bom version 2>/dev/null | head -1))"; return; fi
   echo "== bom 설치"
   if [ $HAS_BREW = 1 ]; then brew install bom && return; fi
-  local tag; tag="$(latest_tag kubernetes-sigs/bom v0.6.0)"
-  install_bin bom "https://github.com/kubernetes-sigs/bom/releases/download/${tag}/bom-${GOOS}-${GOARCH}" \
+  local tag; tag="$(latest_tag kubernetes-sigs/bom v0.7.1)"
+  # ⚠️ bom 릴리스 파일명은 arch-os 순서다: bom-amd64-linux / bom-arm64-linux
+  install_bin bom "https://github.com/kubernetes-sigs/bom/releases/download/${tag}/bom-${GOARCH}-${GOOS}" \
     || echo "   ✗ bom 설치 실패 (go install sigs.k8s.io/bom/cmd/bom@latest 로 대체 가능)"
 }
 
