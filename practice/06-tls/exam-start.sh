@@ -43,6 +43,19 @@ kubectl delete cnp --all -n tls-egress --ignore-not-found >/dev/null 2>&1
 kubectl apply -f setup.yaml    >/dev/null
 kubectl apply -f problem-3.yaml >/dev/null
 
+# 문제 3용 인증서/키를 먼저 제공한다 (문제 4 대기에 막히지 않도록 여기서 바로 생성).
+# 실제 시험처럼 파일이 주어진 상태 — 문제 1(직접 생성)과 대비되는 연습.
+echo "==> 문제 3용 인증서/키를 /tmp/api-tls/ 에 미리 생성합니다"
+mkdir -p /tmp/api-tls
+if command -v openssl >/dev/null 2>&1; then
+  openssl req -x509 -nodes -newkey rsa:2048 -days 365 \
+    -keyout /tmp/api-tls/tls.key -out /tmp/api-tls/tls.crt \
+    -subj "/CN=api.example.com" >/dev/null 2>&1
+  echo "   /tmp/api-tls/tls.crt , /tmp/api-tls/tls.key  (CN=api.example.com)"
+else
+  echo "   ⚠️ openssl 이 없어 인증서를 못 만들었습니다. 수동 생성이 필요합니다."
+fi
+
 # 문제 4 서버의 TLS Secret 을 미리 만든다 (인터넷 없이 nginx 가 HTTPS 를 서빙하도록).
 # SNI 필터는 클라이언트가 보내는 SNI 를 검사하므로, 서버 인증서 내용은 중요하지 않다.
 kubectl get ns tls-egress >/dev/null 2>&1 || kubectl create ns tls-egress >/dev/null 2>&1
@@ -59,19 +72,6 @@ kubectl wait --for=condition=Ready pod -l app=api     -n tls-ex2    --timeout=90
 kubectl wait --for=condition=Ready pod -l app=httpsvc -n tls-egress --timeout=90s >/dev/null 2>&1
 kubectl wait --for=condition=Ready pod -l app=client  -n tls-egress --timeout=90s >/dev/null 2>&1
 echo "   tls-ex(shop, HTTP 전용) / tls-ex2(api, secretName 만 지정됨) / tls-egress(문제4) 재생성됨"
-
-# 문제 3용 인증서/키를 미리 제공한다 (실제 시험처럼 파일이 주어진 상태).
-# → 문제 1(직접 생성)과 달리, 문제 3 은 "주어진 파일로 Secret 만들기"를 연습.
-echo "==> 문제 3용 인증서/키를 /tmp/api-tls/ 에 미리 생성합니다"
-mkdir -p /tmp/api-tls
-if command -v openssl >/dev/null 2>&1; then
-  openssl req -x509 -nodes -newkey rsa:2048 -days 365 \
-    -keyout /tmp/api-tls/tls.key -out /tmp/api-tls/tls.crt \
-    -subj "/CN=api.example.com" >/dev/null 2>&1
-  echo "   /tmp/api-tls/tls.crt , /tmp/api-tls/tls.key  (CN=api.example.com)"
-else
-  echo "   ⚠️ openssl 이 없어 인증서를 못 만들었습니다. 수동 생성이 필요합니다."
-fi
 
 echo "==> 2. work/ 에 작업용 매니페스트 생성"
 mkdir -p work
