@@ -1,6 +1,16 @@
-# 문제 1 정답 — /etc/falco/falco_rules.local.yaml
+# 정답 — /etc/falco/falco_rules.local.yaml
+# (기본 falco_rules.yaml 은 건드리지 말고, 커스텀 룰은 전부 이 local 파일에)
+
+# ── 문제 2 정답: 컨테이너 안에서 셸(sh/bash) 실행 탐지
 - rule: Shell in container
   desc: 컨테이너 내부에서 셸 실행 탐지
   condition: spawned_process and container and proc.name in (sh, bash)
   output: "Shell in container (user=%user.name container=%container.id proc=%proc.cmdline)"
   priority: WARNING
+
+# ── 문제 3 정답: /dev/mem 접근 탐지
+- rule: Detect /dev/mem access
+  desc: detect access to /dev/mem
+  condition: open_read and container and fd.name=/dev/mem
+  output: "sensitive file accessed (pod=%k8s.pod.name ns=%k8s.ns.name container=%container.id)"
+  priority: CRITICAL

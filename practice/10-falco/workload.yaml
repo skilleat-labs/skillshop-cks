@@ -1,4 +1,9 @@
-# 10강 탐지 대상 워크로드. 적용: kubectl apply -f workload.yaml
+# 10강 탐지 대상 워크로드.  적용: kubectl apply -f workload.yaml
+#   - suspicious : 컨테이너 안에서 셸(sh)을 반복 실행 → 문제 2(셸 탐지 룰)용
+#   - intruder   : privileged 로 /dev/mem 을 읽는 악성 파드 → 문제 3(/dev/mem 탐지+대응)용
+#
+# ⚠️ intruder 는 privileged 여야 /dev/mem 장치가 컨테이너 안에 존재한다.
+#    (일반 컨테이너엔 /dev/mem 이 아예 없어서 "No such file" → 룰이 안 걸린다. = 함정 1)
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -26,3 +31,29 @@ spec:
             - sh
             - -c
             - while true; do sh -c 'id'; sleep 20; done
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intruder
+  namespace: falco-ex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: intruder
+  template:
+    metadata:
+      labels:
+        app: intruder
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          # /dev/mem 을 반복해서 열어 읽는다 (open_read on /dev/mem) → Falco 트리거
+          command:
+            - sh
+            - -c
+            - while true; do head -c 16 /dev/mem >/dev/null 2>&1; sleep 10; done
+          securityContext:
+            privileged: true          # ★ 이게 있어야 /dev/mem 장치가 컨테이너에 생김
