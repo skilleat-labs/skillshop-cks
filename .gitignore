@@ -11,3 +11,6 @@ labs/
 
 # 실습 중 학생이 수정하는 작업 파일(exam-start.sh 가 생성)
 practice/*/work/
+
+# 실행 결과물(run-kube-bench.sh 가 생성 — 환경마다 다르고 재생성 가능)
+practice/*/out/

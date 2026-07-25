@@ -2,7 +2,10 @@
 
 > 로컬에 **trivy** 와 **bom** 이 있어야 합니다(시험장엔 설치돼 있음). 문제 5는 컨트롤플레인 노드 작업.
 > 시험 중 허용 문서: trivy(aquasecurity.github.io/trivy), bom(kubernetes-sigs/bom), kubernetes.io
-> 설치(없을 때): trivy 는 배포본/`apt`, bom 은 `go install sigs.k8s.io/bom/cmd/bom@latest` 또는 릴리스 바이너리.
+> **도구 일괄 설치(권장): `./install-cks-tools.sh`** — trivy·bom·kubesec·cosign·kube-bench 를 한 번에 깝니다(macOS/Linux, amd64/arm64). 특정 도구만: `./install-cks-tools.sh trivy bom`.
+> 설치(수동): trivy 는 배포본/`apt`, bom 은 `go install sigs.k8s.io/bom/cmd/bom@latest` 또는 릴리스 바이너리.
+> **kube-bench(CIS 벤치마크)** 는 노드 검사 도구라 Mac 설치만으론 안 됩니다 → 클러스터 Job 으로: `bash run-kube-bench.sh` (결과 `out/master.txt`, `out/node.txt`).
+> **원복(깨끗이 제거): `./uninstall-cks-tools.sh`** — 설치했던 도구 제거 + `kube-bench` 네임스페이스/결과 정리. brew 로 깐 건 brew 로, 바이너리는 그 파일만(안전 경로에서만). CLI 만 지우려면 `--keep-cluster`.
 > ℹ️ trivy **첫 실행 시 취약점 DB(수백 MB)를 내려받느라 시간이 걸립니다. 인터넷 연결 필요.**
 > 멈춘 게 아니라 DB 받는 중이니 기다리세요. (오프라인이면 `trivy image --download-db-only` 를 미리 실행)
 
