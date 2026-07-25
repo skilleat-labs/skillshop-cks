@@ -1,4 +1,4 @@
-# 문제 3 정답 (핵심)
+# 문제 5 정답 (핵심) — ImagePolicyWebhook
 
 ## /etc/kubernetes/admission/config.yaml
 ```yaml
