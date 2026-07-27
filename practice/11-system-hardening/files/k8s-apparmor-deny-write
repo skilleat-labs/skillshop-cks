@@ -1,0 +1,20 @@
+# AppArmor 프로파일 (실습용) — 노드로 복사해서 로드한다.
+#   파일명은 k8s-apparmor-deny-write 지만,
+#   ★ 실제 "프로파일 이름"은 아래 profile 뒤의 very-secure 다. (파일명 아님!)
+#   매니페스트의 localhostProfile 에는 very-secure 를 써야 한다.
+#
+# 노드에서:
+#   scp 로 이 파일을 worker 노드 /etc/apparmor.d/ 에 복사 후
+#   sudo apparmor_parser -q /etc/apparmor.d/k8s-apparmor-deny-write
+#   sudo aa-status | grep very-secure     # 프로파일 이름 확인
+
+#include <tunables/global>
+
+profile very-secure flags=(attach_disconnected) {
+  #include <abstractions/base>
+
+  file,
+
+  # 모든 파일 쓰기 거부 (검증: 컨테이너에서 touch 하면 Permission denied)
+  deny /** w,
+}
